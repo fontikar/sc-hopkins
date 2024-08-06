@@ -23,13 +23,26 @@ Drawing from the first half of the workshop, we will collaborate together on a f
 
 I’ve designed these workshops to be interactive and hands-on. Be prepared to have open discussions, brainstorm and work together. I will try my best to create different channels of communication so everyone can contribute.
 
-What to bring/set up/homework:
+### What to bring/set up/homework:
 
 - Your computer + charger
-- Sign up for a Github account
-- Download Github Desktop
-- Install/Update R 
-- Install/Update RStudio
+- Sign up for a [Github account](https://github.com/join)
+- Download [Github Desktop](https://desktop.github.com/download/)
+- Install/Update [R](https://cran.r-project.org/) 
+- Install/Update [RStudio](https://posit.co/download/rstudio-desktop/)
    - `install.packages('tidyverse')` in R
    - `install.paclages('rmarkdown')` in R
 - Growth mindset + a positive attitude :) 
+
+### Assumed knowledge: 
+
+In order for me to progress with the content I've prepared there are a few things I assume learners have heard of/experience with. Don't fret too much if you don't know these inside out
+
+- Basic usage of R/RStudio
+- Import and save data
+- Use of [RStudio projects](https://support.posit.co/hc/en-us/articles/200526207-Using-RStudio-Projects) (Or an understanding of folder structures and file paths)*
+- Basic usage of [tidyverse](https://www.tidyverse.org/)
+- Understanding of a [pipe](https://r4ds.had.co.nz/pipes.html) `|>` or `%>%`
+
+*In my opinion, this is an essential skill! 
+
