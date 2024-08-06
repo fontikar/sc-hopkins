@@ -1,12 +1,14 @@
 ---
 title: "Writing Functions"
 author: "Fonti Kar"
-date: "2024-07-24"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
 ```
 
 # A quick explaininer on writing R functions
@@ -17,15 +19,15 @@ This is where functions can be useful. You write a function to do your operation
 
 Here's an example: 
 
-We need to reach each penguin dataset and clean it. I've done it manually for 3 species and already you can see how much copy and pasting that was! 
+We need to reach each penguin dataset and clean it. I've done it manually for 3 species and already you can see how much copy and pasting that requires! 
 
-## Read in af data
+## Read in `af` data
 
 ```{r}
 af <- read_csv("data/penguin_distributions/Aptenodytes forsteri.csv")
 ```
 
-## Clean af data
+## Clean `af` data
 
 ```{r}
 af |> 
@@ -43,13 +45,13 @@ af |>
   write_csv("output/af.csv")
 ```
 
-## Read in ap data
+## Read in `ap` data
 
 ```{r}
 ap <- read_csv("data/penguin_distributions/Aptenodytes patagonicus.csv")
 ```
 
-## Clean ap data
+## Clean `ap` data
 
 ```{r}
 cleaned_ap <- ap |> 
@@ -69,13 +71,13 @@ cleaned_ap |>
   write_csv("output/ap.csv")
 ```
 
-## Read in ec data
+## Read in `ec` data
 
 ```{r}
 ec <- read_csv("data/penguin_distributions/Eudyptes chrysocome.csv")
 ```
 
-## Clean ap data
+## Clean `ec` data
 
 ```{r}
 cleaned_ec <- ec |> 
