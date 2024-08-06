@@ -1,0 +1,815 @@
+---
+title: "Day 2 - Scaling up your computations"
+format: html
+---
+
+# Introduction
+
+The goal of this session is to collaboratively solve a series of challenges that will introduce you to practices that enable you scale up your computations.
+
+The data
+
+- (Re)introduce the Penguins data
+
+A common challenge: Repeating things
+
+- split, apply, combine
+
+Several tools that can help us apply this workflow
+
+- tidyverse: tables, group_by, summarise/mutate
+- map: for lists / vectors
+- ggplot: facets 
+- functions
+
+
+## Load libraries
+
+We will primarily be using packages from the {tidyverse}, feel free to add more packages here to help solve the challenges.
+
+```{r}
+library(tidyverse)
+dir.create("output")
+```
+
+
+## Challenge 0 - Loading data from many files
+
+We have just returned from an expedition from Anatarcia and collected *a lot* of data from multiple species of penguins. Sometimes "we" counted the penguins.  Sometimes we didn't.  We recorded data for each species in separate `.csv` files but **we need to combine these into one large dataframe for analyses. How can we do this programmatically?** 
+
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+```{r, instructor-solutions}
+# Map workflow for read_csv
+penguins_combined <- 
+  list.files("data/penguin_distributions", pattern=".csv",full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind()
+
+# write_csv(data, "data/penguins_combined.csv")
+```
+
+
+## Challenge 1 - Import common names
+
+We only have latin names for each species of penguin but we need common names for when we report our results to stakeholders. Our collaborator started compiling common names in a separate `.csv` in the `data/` folder. **Compile the common names for the remaining taxa and join these into the dataframe `penguins_combined`. You may need to import the `penguins_combined.csv` into R first. 
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+# Read in combined dataset
+penguins_combined <- read_csv("data/penguin_combined.csv")
+
+# Read in common names
+penguins_common_names <- read_csv("data/penguin_common_names.csv")
+
+# Join in common names
+penguins_combined_with_common_names <- 
+  penguins_combined |> 
+  left_join(penguins_common_names,  
+    by = join_by(species == scientific_name)) |>
+  relocate(common_name, .after = species)
+
+
+# another way to reorder columns
+penguins_combined_with_common_names |>
+  # use select to sepevify the order
+  select(species, common_name, where(is_character), everything())
+
+```
+
+## Challenge 2 - Add n_records as a column
+
+For your analysis, you need to calculate the total number of records available for each species, and add that as a new column in your data.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+penguins_combined$individualCount[is.na(penguins_combined$individualCount)] <- 0
+
+penguins_combined |>
+  group_by(species) |>
+  summarise(n = n())
+  
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+# Read in combined dataset
+penguins_combined <- read_csv("data/penguin_combined.csv")
+
+penguins_combined_n_records_by_species <- 
+  penguins_combined |> 
+  group_by(species) |> 
+  mutate(n_records = n()) |> 
+  ungroup()
+
+# write_csv(penguins_combined_n_records, "data/penguins_combined_n_records_by_species.csv")
+```
+
+
+## Challenge 3 - Determine the top 3 most recorded taxa
+
+We need to know which are the top 3 species that we have the the most records. Can you figure which species are these?
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+penguins_combined$species |> unique() |> length()
+
+data_counts <- 
+  penguins_combined|>
+  mutate(
+    individualCount = ifelse(is.na(individualCount), 1, individualCount) |> as.numeric()
+  ) |>
+  group_by(species) |>
+  summarise(
+    n_record = n(),
+    n_counts = sum(individualCount)
+    )
+
+data_counts |> 
+  arrange(desc(n_record)) |>
+  slice(1:3)
+
+data_counts |> 
+  arrange(desc(n_counts)) |>
+  slice(1:3)
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+
+penguins_combined_n_records_by_species |> 
+  distinct(species, n_records) |> 
+  slice_max(order_by = n_records, n = 3) 
+```
+
+
+## Challenge 4 - Excluding rogue data
+
+We need to clean the data a little before we analyse it. Clean the data so that we have
+
+- Individual counts < 0
+- Observations from iNaturalist and eBird using the `institutionCode` (the code for eBird is confusingly "CLO"; the code for iNaturalist is more sensibly "iNaturalist")
+
+Export this dataset as a `.csv`
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+penguins_combined %>%
+  filter(
+    individualCount > 0, 
+    institutionCode %in% c("CLO", "iNaturalist")
+  )
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+penguins_combined |> 
+  count(basisOfRecord) |> 
+  print(n = Inf)
+
+penguins_combined |> 
+  filter(individualCount > 0,
+         institutionCode %in% c("iNaturalist", "CLO"))  |> 
+  write_csv("data/penguins_combined_cleaned.csv")
+```
+
+
+## Challenge 5 - Add Size information
+
+We need to get compute the average bill and flipper dimensions using the `penguin_sizes` data and nd merge this into the `penguins_combined` dataset. You name need to wrangle/create the penguin names a little
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+penguin_size <- read_csv("data/penguin_sizes.csv")
+
+size_AVG <-
+  penguin_size %>%
+  group_by(species) %>% 
+  summarise(
+    ave_bill_length = mean(bill_length_mm, na.rm=TRUE),
+    ave_flipper_length = mean(flipper_length_mm, na.rm=TRUE)    
+  ) %>%
+  mutate(
+    species = ifelse(species == "Adelie", "Psygoscelis adealie", species)
+  )
+
+size_AVG$species[size_AVG$species == "Adelie"] <- "Psygoscelis adealie"
+
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+# Read in combined dataset
+penguins_combined <- read_csv("data/penguin_combined.csv")
+
+# Read in common names
+penguins_common_names <- read_csv("data/penguin_common_names.csv")
+
+# Join in common names
+penguins_combined_with_common_names <- 
+  penguins_combined |> 
+  left_join(penguins_common_names,  
+    by = join_by(species == scientific_name))
+
+# Read in body mass
+penguin_size <- read_csv("data/penguin_sizes.csv")
+
+# Join in taxonomic information
+penguin_size$species |> unique()
+
+penguin_size_new_name <- 
+  penguin_size |> 
+  mutate(full_common_name = paste(species, "penguin")) |> 
+  select(full_common_name, species:year)
+
+penguin_size_new_name |> count(full_common_name)
+
+penguin_averages <- 
+  penguin_size_new_name |> 
+  group_by(full_common_name) |> 
+  summarise(
+    mean_bill_length_mm = mean(bill_length_mm, na.rm = TRUE),
+    mean_bill_depth_mm = mean(bill_depth_mm, na.rm = TRUE),
+    mean_flipper_length_mm = mean(flipper_length_mm, na.rm = TRUE)
+    ) 
+
+# Join bill dimensions
+penguins_combined_with_common_names |> count(common_name)
+
+# Check if names exist
+unique(penguins_combined_with_common_names$common_name)
+
+unique(penguin_size_new_name$full_common_name)
+
+# Join bill data
+penguins_combined_with_common_names |> 
+  left_join(penguin_averages, 
+            by = join_by(common_name == full_common_name))
+```
+
+## Challenge 6 - Export data by year
+
+Your collaborator at the museum requires the giant penguin dataset to be broken down and saved as `.csv` by year. Solve this challenge with code!!
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+data_split <- 
+  penguins_combined |>
+  split(~year)
+
+years <- names(data_split)
+years_files <- paste("output/", years, "_penguins.csv", sep = "")
+
+map2(data_split, years_files, write_csv)
+
+for(i in seq_len(length(years))) {
+  write_csv(data_split[[i]], years_files[[i]])
+}
+
+
+out <- list()
+for(i in seq_len(length(years))) {
+  out[[i]] <- nrow(data_split[[i]])
+}
+
+
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+penguins_combined
+
+penguins_list_by_year <- 
+  penguins_combined |> 
+  group_split(year)
+
+names(penguins_list_by_year) <- sort(unique(penguins_combined$year))
+
+purrr::iwalk(penguins_list_by_year, ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+```
+
+
+## Challenge 7 - How much do different penguin species migrate
+
+Your penguin collaborator knows from natural history knowledge that some penguins migrate and others don't but no one has ever quantified this.  Calculate the difference between the summer median latitude and the winter median latitude for each species.  (Median is more robust to outliers so that's more appropriate here compared to the mean.) Note there may be species with missing data for certain seasons and this may lead to missing species in the final plot. 
+
+Make a plot of species by degrees latitude migrated.    
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+
+```{r, instructor-solutions}
+
+penguins_combined |>
+  mutate(summer=month %in% c(1,2,3,12,11,10)) |>
+  group_by(species,summer) |>
+  summarize(med_lat=median(decimalLatitude,na.rm=TRUE)) |>
+  pivot_wider(names_from = `summer`,values_from = `med_lat`) |>
+  mutate(`Migration distance (degrees latitude)`=`FALSE`-`TRUE`) |>
+  ggplot(aes(y=species,x=`Migration distance (degrees latitude)`)) +
+  geom_point()
+
+
+```
+
+
+## Challenge 8 - Lots of descriptive statistics
+
+We need to report on some descriptive statistics of our penguin study. We need to know the following:
+
+- How many different genera are represented in our dataset
+- How many different species do we have for each genera
+- Calculate the proportion of points from iNaturalist and eBird using the institutionCode (the code for eBird is confusingly "CLO"; the code for iNaturalist is more sensibly "iNaturalist")
+- How many records by species
+- How many records by year
+- How many records by country code
+- How many records by basis of record
+
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+# Read in combined dataset
+penguins_combined <- read_csv("data/penguin_combined.csv")
+
+# Records x genus
+penguins_combined |> 
+  count(genus)
+
+# Species x genus
+penguins_combined |> 
+  group_by(genus) |> 
+  summarise(n_species = n_distinct(species))
+
+# Species
+penguins_combined |> 
+  group_by(species) |> 
+  summarise(n = n())
+
+
+# A function for how summarise records by variable
+summarise_records_by <- function(data, var_name){
+  data |> 
+    group_by({{var_name}}) |> 
+    summarise(n = n())
+}
+
+penguins_combined |> 
+  summarise_records_by(year)
+
+penguins_combined |> 
+  summarise_records_by(countryCode)
+
+penguins_combined |> 
+  summarise_records_by(basisOfRecord)
+```
+
+
+## Challenge 9 - Facet plot and export plots
+
+We want some good visualisations of our data.
+
+a. Make a multipanel plot of global distribution of penguins, with a panel for each genus
+b. Make a multipanel plot of by month
+c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or >=10) on the x-axis
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+  
+```
+
+
+## Challenge 10 - Plot country x species presence-absence
+
+You want to make a graph of country x species, colouring for each species if it present in each country.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+
+# count the number of observations for each species in each country
+out_count <-
+  penguins_combined |>
+  group_by(species, countryCode) |>
+  summarise(.groups = "drop",
+    # number of records
+    n = n()
+  ) |>
+  filter(
+    !is.na(countryCode),
+    # consider a species present if > 3 obs
+    n > 3
+  )
+
+# Create a full grid of country x species combinations
+# unlike the counts above, this will contain cells where there are zero counts
+out_grid <- 
+  expand_grid(
+    species = unique(out_count$species),
+    countryCode = unique(out_count$countryCode)
+)
+
+# join these to get full counts
+out <-
+  left_join(
+    out_grid, out_count,
+    by = join_by(species, countryCode)
+  ) |>
+  mutate(
+    # fill zeroes
+    n = replace_na(n, 0),
+    # TRUE-FALSE if speciesa is present
+    present = n > 0
+  )
+
+out |>
+  # Reorder factor variables by number of species
+  mutate(
+    species = forcats::fct_reorder(species, present, sum),
+    countryCode = forcats::fct_reorder(countryCode, present, sum)
+  ) |>
+  # Pass modified data into ggplot
+  ggplot(aes(countryCode, species, fill= present)) +
+  geom_tile()
+
+```
+
+
+## Challenge 11 - Make a lot of maps
+
+Make a folder and make 17 pdfs, one for each penguin species, with a map of that species.  Make the title of the plot include both the common name of the speices and the scientific name.  Make the file name the scientific name.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r}
+make_plot <- function(penguin_of_interest, pen_all = pen_all) {
+  world <- map_data("world")
+  specific_pen <- filter(pen_all, species == penguin_of_interest)
+  pen_large_counts <- filter(specific_pen, individualCount >= 1000)
+  pen_small_counts <- filter(specific_pen, individualCount < 1000)
+  worldplot <- ggplot() +
+    geom_polygon(data = world, aes(x = long, y = lat, group = group), fill= "grey") +
+    coord_fixed(1.3) +
+    geom_point(
+      data = pen_small_counts,
+      aes(x = decimalLongitude, y = decimalLatitude),
+      col = "red",
+      alpha = 0.1
+    ) +
+    geom_point(
+      data = pen_large_counts,
+      aes(x = decimalLongitude, y = decimalLatitude),
+      col = "red"
+    ) +
+    ggtitle(penguin_of_interest) +
+    theme_void()
+  print(worldplot)
+  return(worldplot)
+}
+
+# choose a species to try it
+penguin_species <- unique(penguins_combined$species)
+spp <- penguin_species[10]
+
+make_plot(spp, penguins_combined)
+```
+
+
+Now let's use our new skills to make lots of plots!
+
+```{r}
+walk(penguin_species, make_plot, penguins_combined)
+```
+
+Or we could save the plots
+```{r}
+save_plot <- function(penguin_spp, data, path = "output/by_species/") {
+  dir.create(path, FALSE, TRUE)
+  p <- make_plot(penguin_spp, data)
+  ggsave(paste0(path, penguin_spp, ".png"), p)
+}
+
+walk(penguin_species, save_plot, penguins_combined)
+```
+
+## Challenge 12 - Fit lots of models
+
+In your analyses, sometimes you need to fit one complex model, other times you might be fitting many seperate models. How do we do that efficiently?
+
+You been asked to fit a linear model between log_count and latitude, for each speces. Fit the models and extract the r2 for each model fit.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+How would you solve this problem using existing knowledge: 
+
+-
+-
+-
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+Demonstrator solutions: 
+
+```{r, instructor-solutions}
+
+# filter data to only that with count data
+
+data_counts <- penguins_combined |> filter(individualCount > 0)
+
+# write a function to fit a model
+fit_model <- function(data) {
+  model <- lm(log10(individualCount) ~ decimalLatitude, data = data)
+  return(model)
+}
+
+# take in a model object and return an r2 value
+get_r2 <- function(fit) {
+  r <- performance::r2(fit)
+  return(r$R2)
+}
+```
+
+
+Let's try this on one spp
+```{r}
+# Get list of species
+pen_species <- unique(data_counts$species)
+
+# filter data to one spp
+i <- 10
+data_one_spp <- filter(data_counts, species==pen_species[i])
+fit_one_spp <- fit_model(data_one_spp )
+get_r2(fit_one_spp)
+```
+
+And now apply to many species
+
+```{r}
+# First split the data by species
+fits <-
+  data_counts |>
+  split(~species) |>
+  map(fit_model)
+
+map_dbl(fits, get_r2)
+
+# If we're happy with an anonymous function, we could skip the get_r2 function
+map_dbl(fits, ~performance::r2(.x)$R2)
+map_dbl(fits, ~performance::r2(.x)[["R2"]])
+```
+
+
+## Challenge 13 - Combining nest and map
+
+```{r}
+
+penguins_nested_data <- 
+  tibble(
+    files = list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE)) |> 
+  mutate(
+    data = map(files, read_csv, show_col_types = FALSE)
+   )
+
+#   Alternativeley
+penguins_nested_data <- 
+  list.files("data/penguin_distributions", pattern=".csv",full.names = TRUE) |> 
+  map_df(read_csv, show_col_types = FALSE) |> 
+  nest(data = -c("species"))
+
+```
+
+Now lets fits models and get r2
+
+```{r}
+# Using our pre-written functions
+penguins_nested_data_fits <- 
+  penguins_nested_data |>
+  mutate(
+    n = map_int(data, nrow),
+    fit1 = map(data, fit_model),
+    r2 = map_dbl(fits, get_r2)
+  )
+
+# Alterantively, using inline functions
+penguins_nested_data_fits <- 
+  penguins_nested_data |> 
+  mutate(
+    n = map_int(data, nrow),
+    fit1 = map(data, ~lm(log10(individualCount) ~ decimalLatitude, data = .x)),
+    r2 = map_dbl(fits, ~performance::r2(.x)$R2)
+  )
+
+```
+
+
