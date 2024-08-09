@@ -1,6 +1,5 @@
 ---
-title: "Scaling up your computations"
-date: "`r Sys.Date()`"
+title: "Day 2 - Scaling up your computations"
 format: html
 ---
 
@@ -8,21 +7,20 @@ format: html
 
 The goal of this session is to collaboratively solve a series of challenges that will introduce you to practices that enable you scale up your computations.
 
-## The data
+The data
 
-- Introduce the Penguins data
+- (Re)introduce the Penguins data
 
-## A common challenge: Repeating things
+A common challenge: Repeating things
 
-- plit, apply, combine
+- split, apply, combine
 
-## Several tools that can help us apply this workflow
+Several tools that can help us apply this workflow
 
-- `tidyverse`: tables, group_by, summarise/mutate
-- `purrr::map`: for lists / vectors
-- `ggplot`::facet_
+- tidyverse: tables, group_by, summarise/mutate
+- map: for lists / vectors
+- ggplot: facets 
 - functions
-- `tidyr::nest`
 
 
 ## Load libraries
@@ -31,6 +29,7 @@ We will primarily be using packages from the {tidyverse}, feel free to add more 
 
 ```{r}
 library(tidyverse)
+dir.create("output")
 ```
 
 
