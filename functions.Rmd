@@ -9,9 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(janitor)
 ```
 
-# A quick explaininer on writing R functions
+# A quick explainer on writing R functions
 
 As researchers we often need to repeat our code operations. This often results in a lot of copy and pasting, making our R scripts/files realllly long. This also creates a problem of having to make changes to all your repeated code if you need to edit one thing. You can see how quickly things can get out of hand....
 
@@ -97,11 +98,11 @@ cleaned_ec |>
   write_csv("output/ec.csv")
 ```
 
-## Function to prep data
+# A function to clean your data data
 
 So here I've decided that was too much work and I need to write a function. I've called my function `prepare_data_for_plot`. Give your functions a clear, declarative name of what it does. Not `my_function`, something meaningful. 
 
-- To write your function, we use the `function()` function. The inputs you put inside `function()`, are the inputs you will have for your function. Here, my function will take an input `function(data)`. 
+- To write your function, we use the `function()` function. The inputs you put inside `function()`, are the **inputs** you will have for your function. Here, my function will take an input `data`. 
 
 - The `{    }` is where you define the body of your function. This is where I've pasted my repeated data cleaning code. 
 
@@ -127,8 +128,263 @@ prepare_data_for_plot <- function(data){
   
 }
 
-cleaned_af <- prepare_data_for_plot(af)
+prepare_data_for_plot(af)
 prepare_data_for_plot(ap)
 prepare_data_for_plot(ec)
 
+cleaned_af <- prepare_data_for_plot(af)
 ```
+
+# A function for quick summaries
+
+Something we often need to do is to get some descriptive stats on our data. The functions: `group_by()` and `summarise()` are really useful for this sort of task but what we if needed to generate descriptive statistics more than once? 
+
+Lets say I need to know the number of observations for each level of `species`, how I usually need to do this?
+
+```{r}
+cleaned_af |> 
+  group_by(species) |> 
+  summarise(n_obs = n())
+```
+
+OK, I also need it for each level of `country_code` and `institution_code`
+
+I _could_ do some copying and pasting...
+
+```{r}
+cleaned_af |> 
+  group_by(institution_code) |> 
+  summarise(n_obs = n())
+
+cleaned_af |> 
+  group_by(country_code) |> 
+  summarise(n_obs = n())
+```
+
+OR I could write a function! Now, since we are using tidyverse style of coding, we have to learn a few tricks about how to program tidy functions. 
+
+One amazing benefit of tidyverse packages and function is the ability to not have to quote your variable names. You can just type `country_code` and the function will know that `country_code` is a variable inside the dataframe. This unique-coolness tidyverse functions is called **non-standard evaluation or NSE** and its actually not unique to tidyverse.  See `subset()` for example. 
+
+For researchers to write useful functions, we need to be able to program NSE in our own functions. In our function where we want to supply **ANY variable name**, we need to **double-embrace** the variable name input like this `{{var}}`
+
+```{r}
+count_n_obs <- function(data, var){
+  cleaned_af |> 
+  group_by(country_code) |> 
+  summarise(n_obs = n())
+}
+
+count_n_obs <- function(data, var){
+  data |> 
+  group_by({{var}}) |> 
+  summarise(n_obs = n())
+}
+
+cleaned_af |> 
+  count_n_obs(country_code)
+
+cleaned_af |> 
+  count_n_obs(institution_code)
+```
+
+Exercises: 
+
+- Write a `group_by()` `summarise()` function to compute the median of a numeric value. Try it our on individual count
+
+```{r}
+group_median <- function(data, group_var, med_var){
+  data |> 
+  group_by({{group_var}}) |> 
+  summarise(median = median({{med_var}}))
+}
+
+cleaned_af |> group_median(institution_code, individual_count)
+```
+
+
+- Create a new variable called `infraspecific_epiphet` where the second word of species is the value. You may need to use `stringr`
+
+```{r}
+library(stringr)
+
+cleaned_af <- cleaned_af |> 
+  mutate(infraspecific_epiphet = word(species, 2)) |> 
+  relocate(infraspecific_epiphet, .after = genus) 
+```
+
+- Write a function that will join `genus` strings together separated by a `_` that you can use alongside `mutate()` 
+
+```{r}
+join_underscore <- function(genus, epiphet){
+  paste(genus, epiphet, sep = "_")
+}
+
+join_underscore(letters, LETTERS)
+
+cleaned_af |> 
+  mutate(species_underscore = join_underscore(genus, infraspecific_epiphet)) |> 
+  pull(species_underscore)
+```
+
+- Write a function that will take the `occurrence_id` and remove all the letters so that we get `OBSXXXXXXXX`. You may need to use `stringr`
+
+```{r}
+cleaned_af$occurrence_id
+
+str_subset(cleaned_af$occurrence_id, regex("[0-9]"))
+str_split(cleaned_af$occurrence_id, ":", simplify = TRUE)[,5]
+```
+
+
+# A function for quick data visualisations
+
+Another common task for researchers is to quickly generate some data visualisations to get a sense of their data. Here we will use `ggplot2`. 
+
+Let's say I want to create a histogram our numeric variables, so I can check if there are any rogue data points. I will write the code out once and format the plot to how I want it. 
+```{r}
+ggplot(data = cleaned_af, aes(x = decimal_latitude)) +
+  geom_histogram(bins = 50, fill = "seagreen") + 
+  xlab("Latitude") +
+  ylab("Number of records") +
+  ggtitle(cleaned_af$species |> unique()) + 
+  theme_minimal()
+```
+
+Now let's try stick it in a function. 
+ 
+Identify your inputs! 
+
+- What's coming in? 
+- What variable do you expect to change? 
+- What parts of the code do you expect to change?
+
+```{r}
+quick_histogram <- function(data, var, group_var){
+  #browser()
+  # Make pretty xlab
+  q_var <- rlang::enquo(var)
+  
+  # Isolate group_var
+  # title <- data |> 
+  #   pull({{group_var}}) |> 
+  #   unique()
+
+  ggplot(data = data, aes(x = {{var}})) +
+  geom_histogram(bins = 50, fill = "seagreen") + 
+  # xlab(rlang::as_label(q_var)) +
+  ylab("Number of records") +
+  # ggtitle(title) + 
+  theme_minimal()
+}
+
+cleaned_af |> quick_histogram(decimal_longitude)
+cleaned_af |> quick_histogram(individual_count, species)
+```
+
+Exercises: 
+
+- Write a function where you can plot any numeric variable as a violin plot
+
+```{r}
+quick_violin <- function(data, y_var, x_var){
+ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
+  geom_violin(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  theme_minimal()
+}
+
+ggplot(data = cleaned_af, aes(y = decimal_latitude, x = species)) +
+  geom_violin(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  theme_minimal()
+
+quick_violin(cleaned_af, decimal_latitude, country_code)
+quick_violin(cleaned_ap, individual_count, institution_code)
+```
+
+- Amend the function above: Add an input variable for whether to plot `individual_count` on log10 scale or not. 
+```{r}
+ggplot(data = cleaned_af, aes(y = individual_count, x = species)) +
+  geom_violin(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  scale_y_log10() +
+  theme_minimal()
+
+quick_violin <- function(data, y_var, x_var, y_log10){
+
+  base <- ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
+  geom_violin(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  theme_minimal()
+
+  # browser()
+  
+if(y_log10 == TRUE) 
+ base <- base + scale_y_log10()
+
+return(base)
+}
+
+quick_violin(cleaned_ec, individual_count, species, FALSE)
+quick_violin(cleaned_ec, individual_count, species, TRUE)
+```
+
+- Extend your function. Add an input variable that specifies whether a boxplot or a violin plot will be produced. You may need to call a function within your new function. 
+
+```{r}
+quick_violin <- function(data, y_var, x_var){
+ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
+  geom_violin(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  theme_minimal()
+}
+
+quick_boxplot <- function(data, y_var, x_var){
+ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
+  geom_boxplot(colour = "seagreen") + 
+  geom_point(alpha = 0.1) +
+  theme_minimal()
+}
+
+quick_viz<- function(data, y_var, x_var, type){
+
+  # browser()
+  if(type == "boxplot"){
+    quick_boxplot(data, y_var = y_var, x_var= x_var)
+  }
+  
+ if(type == "violin"){
+   quick_violin(data = data, y_var = y_var, x_var = x_var)
+ }
+}
+
+quick_viz(cleaned_ap, individual_count, species, type = "violin")
+
+quick_boxplot(cleaned_ap, individual_count, species)
+quick_violin(cleaned_ap, individual_count, species)
+```
+
+# Introducing purrr
+
+Okay, we've just gone through some function writing tips and tricks and had a play on how to get them working. 
+
+Now, I want to introduce you all to the R package purrr. This package will allow you to use your functions and scale up dramatically. 
+
+The main functions from purrr you will likely use is `map_` and its variants `map2`, `imap` or `walk_` and its variants. 
+
+`map` loves the split-apply-combine problems. It is written for exactly this purpose.
+
+Let me demonstrate first. Look inside the `data/` folder. There you can see
+
+```{r}
+penguins_combined <- 
+  list.files("data/penguin_distributions", pattern=".csv",full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind()
+```
+
+
+
+
+
+
