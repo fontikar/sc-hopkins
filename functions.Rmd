@@ -12,7 +12,7 @@ library(tidyverse)
 library(janitor)
 ```
 
-# A quick explainer on writing R functions
+## A quick explainer on writing R functions
 
 As researchers we often need to repeat our code operations. This often results in a lot of copy and pasting, making our R scripts/files realllly long. This also creates a problem of having to make changes to all your repeated code if you need to edit one thing. You can see how quickly things can get out of hand....
 
@@ -22,13 +22,13 @@ Here's an example:
 
 We need to reach each penguin dataset and clean it. I've done it manually for 3 species and already you can see how much copy and pasting that requires! 
 
-## Read in `af` data
+### Read in `af` data
 
 ```{r}
 af <- read_csv("data/penguin_distributions/Aptenodytes forsteri.csv")
 ```
 
-## Clean `af` data
+### Clean `af` data
 
 ```{r}
 af |> 
@@ -46,13 +46,13 @@ af |>
   write_csv("output/af.csv")
 ```
 
-## Read in `ap` data
+### Read in `ap` data
 
 ```{r}
 ap <- read_csv("data/penguin_distributions/Aptenodytes patagonicus.csv")
 ```
 
-## Clean `ap` data
+### Clean `ap` data
 
 ```{r}
 cleaned_ap <- ap |> 
@@ -72,13 +72,13 @@ cleaned_ap |>
   write_csv("output/ap.csv")
 ```
 
-## Read in `ec` data
+### Read in `ec` data
 
 ```{r}
 ec <- read_csv("data/penguin_distributions/Eudyptes chrysocome.csv")
 ```
 
-## Clean `ec` data
+### Clean `ec` data
 
 ```{r}
 cleaned_ec <- ec |> 
@@ -98,7 +98,7 @@ cleaned_ec |>
   write_csv("output/ec.csv")
 ```
 
-# A function to clean your data data
+## A function to clean your data data
 
 So here I've decided that was too much work and I need to write a function. I've called my function `prepare_data_for_plot`. Give your functions a clear, declarative name of what it does. Not `my_function`, something meaningful. 
 
@@ -135,7 +135,7 @@ prepare_data_for_plot(ec)
 cleaned_af <- prepare_data_for_plot(af)
 ```
 
-# A function for quick summaries
+## A function for quick summaries
 
 Something we often need to do is to get some descriptive stats on our data. The functions: `group_by()` and `summarise()` are really useful for this sort of task but what we if needed to generate descriptive statistics more than once? 
 
@@ -236,7 +236,7 @@ str_split(cleaned_af$occurrence_id, ":", simplify = TRUE)[,5]
 ```
 
 
-# A function for quick data visualisations
+## A function for quick data visualisations
 
 Another common task for researchers is to quickly generate some data visualisations to get a sense of their data. Here we will use `ggplot2`. 
 
@@ -330,6 +330,23 @@ save_plot <- function(gg_obj, file_name, path = "output/fig/", ...){
 p1 <- quick_violin(cleaned_af, individual_count, species, TRUE)
 save_plot(p1, "plot.png")
 ```
+
+## Argh, help my function isn't working
+
+Sometimes, you can't get your function to work and you have no idea why. There are few strategies here: 
+
+- Go swimming with `browser()`
+  - You can also do that with a breakpoint with RStudio
+- Add a `print()` or a `str()` to force the function to tell you what you want to work with
+- ChatGPT is pretty good too
+
+
+```{r}
+browser() 
+```
+
+
+
 
 - Bonus: Write a wrapper function that
 
