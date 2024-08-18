@@ -260,20 +260,9 @@ Identify your inputs!
 
 ```{r}
 quick_histogram <- function(data, var, group_var){
-  #browser()
-  # Make pretty xlab
-  q_var <- rlang::enquo(var)
-  
-  # Isolate group_var
-  # title <- data |> 
-  #   pull({{group_var}}) |> 
-  #   unique()
-
   ggplot(data = data, aes(x = {{var}})) +
   geom_histogram(bins = 50, fill = "seagreen") + 
-  # xlab(rlang::as_label(q_var)) +
   ylab("Number of records") +
-  # ggtitle(title) + 
   theme_minimal()
 }
 
@@ -304,6 +293,7 @@ quick_violin(cleaned_ap, individual_count, institution_code)
 
 - Amend the function above: Add an input variable for whether to plot `individual_count` on log10 scale or not. 
 ```{r}
+# Generate the plot once
 ggplot(data = cleaned_af, aes(y = individual_count, x = species)) +
   geom_violin(colour = "seagreen") + 
   geom_point(alpha = 0.1) +
@@ -316,8 +306,6 @@ quick_violin <- function(data, y_var, x_var, y_log10){
   geom_violin(colour = "seagreen") + 
   geom_point(alpha = 0.1) +
   theme_minimal()
-
-  # browser()
   
 if(y_log10 == TRUE) 
  base <- base + scale_y_log10()
@@ -329,62 +317,51 @@ quick_violin(cleaned_ec, individual_count, species, FALSE)
 quick_violin(cleaned_ec, individual_count, species, TRUE)
 ```
 
-- Extend your function. Add an input variable that specifies whether a boxplot or a violin plot will be produced. You may need to call a function within your new function. 
+- Write a function to save a ggplot object where the default file path is the `output/fig/` folder. Tip - check if the file path exists and if not, create it. 
 
 ```{r}
-quick_violin <- function(data, y_var, x_var){
-ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
-  geom_violin(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  theme_minimal()
-}
-
-quick_boxplot <- function(data, y_var, x_var){
-ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
-  geom_boxplot(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  theme_minimal()
-}
-
-quick_viz<- function(data, y_var, x_var, type){
-
-  # browser()
-  if(type == "boxplot"){
-    quick_boxplot(data, y_var = y_var, x_var= x_var)
+save_plot <- function(gg_obj, file_name, path = "output/fig/", ...){
+  if(! file.exists(path)){
+    dir.create(path)
   }
-  
- if(type == "violin"){
-   quick_violin(data = data, y_var = y_var, x_var = x_var)
- }
+  ggsave(file_name, path = path, plot = gg_obj, ...)
 }
 
-quick_viz(cleaned_ap, individual_count, species, type = "violin")
-
-quick_boxplot(cleaned_ap, individual_count, species)
-quick_violin(cleaned_ap, individual_count, species)
+p1 <- quick_violin(cleaned_af, individual_count, species, TRUE)
+save_plot(p1, "plot.png")
 ```
 
-# Introducing purrr
-
-Okay, we've just gone through some function writing tips and tricks and had a play on how to get them working. 
-
-Now, I want to introduce you all to the R package purrr. This package will allow you to use your functions and scale up dramatically. 
-
-The main functions from purrr you will likely use is `map_` and its variants `map2`, `imap` or `walk_` and its variants. 
-
-`map` loves the split-apply-combine problems. It is written for exactly this purpose.
-
-Let me demonstrate first. Look inside the `data/` folder. There you can see
+- Bonus: Write a wrapper function that
 
 ```{r}
-penguins_combined <- 
-  list.files("data/penguin_distributions", pattern=".csv",full.names = TRUE) |> 
-  map(read_csv, show_col_types = FALSE) |> 
-  list_rbind()
+quick_viz <- function(data, y_var, x_var, type) {
+  y_var <- enquo(y_var)
+  x_var <- enquo(x_var)
+  
+  if (type == "boxplot") {
+    quick_boxplot(data, !!y_var, !!x_var)
+  } else if (type == "violin") {
+    quick_violin(data, !!y_var, !!x_var)
+  } else {
+    stop("Invalid type. Please use 'boxplot' or 'violin'.")
+  }
+}
+
+quick_violin <- function(data, y_var, x_var) {
+  ggplot(data = data, aes(y = {{ y_var }}, x = {{ x_var }})) +
+    geom_violin(colour = "seagreen") + 
+    geom_point(alpha = 0.1) +
+    theme_minimal()
+}
+
+quick_boxplot <- function(data, y_var, x_var) {
+  ggplot(data = data, aes(y = {{ y_var }}, x = {{ x_var }})) +
+    geom_boxplot(colour = "seagreen") + 
+    geom_point(alpha = 0.1) +
+    theme_minimal()
+}
+
+quick_viz(cleaned_af, individual_count, species, type = "violin")
+quick_viz(cleaned_af, decimal_latitude, species, type = "boxplot")
 ```
-
-
-
-
-
 
