@@ -238,7 +238,34 @@ purrr::iwalk(penguins_list_by_year, ~ write_csv(.x, file = paste0("output/pengui
 
 - What is different between the `map2` and `walk2` call? 
 - What is different in the syntax of the `walk2` and `iwalk` call? Does the help file give you a hint?
+- Using palmer penguins data, write a function that will create scatterplots between bill_length and bill depth. Include a title for each species name and then save the produced plot `ggsave()`, `walk2` or `iwalk` this over each species
 
+```{r}
+
+```
+
+```{r}
+penguins |> 
+  split(~species)
+
+# Write the function
+save_scatter_bill_len_bill_depth <- function(data, species){
+  ggplot(data = data, aes(bill_length_mm, bill_depth_mm)) + 
+  geom_point() + # Scatter plot
+  ggtitle(paste0("Species: ", species)) # Add a title
+  
+  ggsave(filename = paste0("output/", species,"_scatterplot.png"))
+}
+
+# Try it out first across whole dataset
+save_scatter_bill_len_bill_depth(penguins, "all_penguins_")
+
+# Walk it
+penguins |> 
+  split(~species) |> 
+  iwalk(~save_scatter_bill_len_bill_depth(.x, .y))
+
+```
 
 # Nesting and list columns
 
