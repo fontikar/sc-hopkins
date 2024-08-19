@@ -209,36 +209,35 @@ penguins |>
   relocate(mass_adjusted_bill_length, .after = bill_length_mm) # Move new variable in a nice places
 ```
 
-# Walking instead of mapping for plots
+## Walking instead of saving many things
 
-`map` functions has a cousin called `walk` that essentially does the same thing...but it returns the output **invisibly**, its typically used in conjunction with ggplots
+`map` functions has a cousin called `walk` that essentially does the same thing...but it returns the output **invisibly**, its typically used in conjunction with functions where the output is not relevant
 
-Here I've written a function to plot body mass by bill length
+Here I want to save the output of the penguins data by year as .csv files
 
 ```{r}
-# Function to create and save ggplot for each species
-create_plot <- function(data, species) {
-  ggplot(data, aes(x = body_mass_g, y = bill_length_mm)) +
-    geom_point() +
-    ggtitle(paste("Species:", species)) +
-    theme_minimal()
-}
+# Split data by year
+penguins_list_by_year <- 
+  penguins_combined |> 
+  split(~year)
 
-# Try it out on a single species first
-penguins |> 
-  filter(species == "Gentoo") |> 
-  create_plot("Gentoo")
+# Get the names of year
+names(penguins_list_by_year) <- sort(unique(penguins_combined$year))
 
-# Use purrr::walk to create and save plots for each species
-penguins |>
-  split(~species) |>
-  walk(~{
-    species <- unique(.x$species)
-    plot <- create_plot(.x, species)
-    ggsave(filename = paste0("output/plot_", species, ".png"), plot = plot)
-  }
-  )
+# Mapping
+purrr::map2(penguins_list_by_year, names(penguins_list_by_year), ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+
+# Walking2
+purrr::walk2(penguins_list_by_year, names(penguins_list_by_year), ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+
+# Alternative with iwalking 
+purrr::iwalk(penguins_list_by_year, ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
 ```
+
+### Exercise: 
+
+- What is different between the `map2` and `walk2` call? 
+- What is different in the syntax of the `walk2` and `iwalk` call? Does the help file give you a hint?
 
 
 # Nesting and list columns
