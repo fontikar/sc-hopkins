@@ -67,11 +67,6 @@ penguins_combined <- list.files("data/penguin_distributions", pattern=".csv", fu
   list_rbind() |> 
   clean_names()
 ```
-
-### Reflect: 
-
-- Can you think of a use case of `map` in your work? 
-
 ### Exercise: nrow for island
 
 - Can you get the output of `nrow` for each `island` in the palmerpenguins::penguins dataset using `map`. (Hint: You will need `split()`). 
@@ -214,6 +209,38 @@ penguins |>
   relocate(mass_adjusted_bill_length, .after = bill_length_mm) # Move new variable in a nice places
 ```
 
+# Walking instead of mapping for plots
+
+`map` functions has a cousin called `walk` that essentially does the same thing...but it returns the output **invisibly**, its typically used in conjunction with ggplots
+
+Here I've written a function to plot body mass by bill length
+
+```{r}
+# Function to create and save ggplot for each species
+create_plot <- function(data, species) {
+  ggplot(data, aes(x = body_mass_g, y = bill_length_mm)) +
+    geom_point() +
+    ggtitle(paste("Species:", species)) +
+    theme_minimal()
+}
+
+# Try it out on a single species first
+penguins |> 
+  filter(species == "Gentoo") |> 
+  create_plot("Gentoo")
+
+# Use purrr::walk to create and save plots for each species
+penguins |>
+  split(~species) |>
+  walk(~{
+    species <- unique(.x$species)
+    plot <- create_plot(.x, species)
+    ggsave(filename = paste0("output/plot_", species, ".png"), plot = plot)
+  }
+  )
+```
+
+
 # Nesting and list columns
 
 Now I'd like to introduce to a new sort of data wrangling practice and structure. We have worked with lists right? Lists are nested structures that allows you to store a lot different kinds of data. 
@@ -248,8 +275,8 @@ We are going to create a list column, where the columnis going hold a list in ea
 Here, I am nesting or "tucking in" the data for each `species` of penguins from the `palmerpenguins` dataset coordinates of each species into their own tibble ad storing it into a column called `data`. Check it out: 
 
 ```{r}
-nested_penguins <- penguins %>%
-  group_by(species) %>%
+nested_penguins <- pÏenguins |>
+  group_by(species) |>
   nest()
 
 nested_penguins
@@ -274,7 +301,7 @@ Here I am computing summary statistics
 
 ```{r}
 # Calculate summary statistics for each species
-summary_stats <- nested_penguins %>%
+summary_stats <- nested_penguins |>
   mutate(summary = map(data, ~ summarise(.x, 
                                          mean_bill_length = mean(bill_length_mm, na.rm = TRUE),
                                          mean_bill_depth = mean(bill_depth_mm, na.rm = TRUE),
@@ -284,8 +311,8 @@ summary_stats <- nested_penguins %>%
 summary_stats
 
 # View the summary statistics
-summary_stats %>%
-  select(species, summary) %>%
+summary_stats |>
+  select(species, summary) |>
   unnest(summary)
 ```
 
@@ -303,8 +330,8 @@ Bonus: Once you have done can you use the `{broom}` package to `augment` some mo
 ```{r, instructors-purrr-e4}
 # install.packages(brooms)
 
-nested_penguins <- penguins %>%
-  group_by(species) %>%
+nested_penguins <- penguins |>
+  group_by(species) |>
   nest()
 
 models <- nested_penguins |> 
@@ -312,12 +339,12 @@ models <- nested_penguins |>
 
 
 # Predict body mass using the fitted models
-predictions <- models %>%
+predictions <- models |>
   mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
 
 # Without broom
 # Predict body mass using the fitted models
-predictions <- models %>%
+predictions <- models |>
   mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
 
 # Unnest
