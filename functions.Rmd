@@ -98,7 +98,7 @@ cleaned_ec |>
   write_csv("output/ec.csv")
 ```
 
-## A function to clean your data data
+## A function to data cleaning
 
 So here I've decided that was too much work and I need to write a function. I've called my function `prepare_data_for_plot`. Give your functions a clear, declarative name of what it does. Not `my_function`, something meaningful. 
 
@@ -134,6 +134,10 @@ prepare_data_for_plot(ec)
 
 cleaned_af <- prepare_data_for_plot(af)
 ```
+
+### Exercise/Discussion: return()
+
+- What is the `return()` function doing? What happens when you remove it and use the function again? 
 
 ## A function for quick summaries
 
@@ -187,11 +191,15 @@ cleaned_af |>
   count_n_obs(institution_code)
 ```
 
-Exercises: 
+### Exercise: Medians
 
 - Write a `group_by()` `summarise()` function to compute the median of a numeric value. Try it our on individual count
 
-```{r}
+```{r, learners-function-e2}
+
+```
+
+```{r, instructor-function-e2}
 group_median <- function(data, group_var, med_var){
   data |> 
   group_by({{group_var}}) |> 
@@ -225,16 +233,6 @@ cleaned_af |>
   mutate(species_underscore = join_underscore(genus, infraspecific_epiphet)) |> 
   pull(species_underscore)
 ```
-
-- Write a function that will take the `occurrence_id` and remove all the letters so that we get `OBSXXXXXXXX`. You may need to use `stringr`
-
-```{r}
-cleaned_af$occurrence_id
-
-str_subset(cleaned_af$occurrence_id, regex("[0-9]"))
-str_split(cleaned_af$occurrence_id, ":", simplify = TRUE)[,5]
-```
-
 
 ## A function for quick data visualisations
 
@@ -270,11 +268,15 @@ cleaned_af |> quick_histogram(decimal_longitude)
 cleaned_af |> quick_histogram(individual_count, species)
 ```
 
-Exercises: 
+### Exercise: Violin plot
 
 - Write a function where you can plot any numeric variable as a violin plot
 
-```{r}
+```{r, learners-function-e3}
+
+```
+
+```{r, instructore-function-e3}
 quick_violin <- function(data, y_var, x_var){
 ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
   geom_violin(colour = "seagreen") + 
@@ -338,47 +340,52 @@ Sometimes, you can't get your function to work and you have no idea why. There a
 - Go swimming with `browser()`
   - You can also do that with a breakpoint with RStudio
 - Add a `print()` or a `str()` to force the function to tell you what you want to work with
-- ChatGPT is pretty good too
+- ChatGPT is pretty good too at debugging
 
 
 ```{r}
-browser() 
-```
-
-
-
-
-- Bonus: Write a wrapper function that
-
-```{r}
-quick_viz <- function(data, y_var, x_var, type) {
-  y_var <- enquo(y_var)
-  x_var <- enquo(x_var)
+prepare_data_for_plot <- function(data){
   
-  if (type == "boxplot") {
-    quick_boxplot(data, !!y_var, !!x_var)
-  } else if (type == "violin") {
-    quick_violin(data, !!y_var, !!x_var)
-  } else {
-    stop("Invalid type. Please use 'boxplot' or 'violin'.")
-  }
+  browser()
+  
+  cleaned_data <- data |> 
+  select(gbifID:species, individualCount, # Selecting specific cols
+         countryCode, locality, 
+         institutionCode,
+         decimalLongitude, decimalLatitude,
+         eventDate, 
+         coordinateUncertaintyInMeters) |> 
+  filter(individualCount > 1, # Exclude records with less 1 individual count
+         institutionCode %in% c("CLO", "iNaturalist")
+         )|>
+  arrange(eventDate) |>  # Sort by date
+  clean_names()  # clean colname names
+
+  return(cleaned_data)
+  
 }
 
-quick_violin <- function(data, y_var, x_var) {
-  ggplot(data = data, aes(y = {{ y_var }}, x = {{ x_var }})) +
-    geom_violin(colour = "seagreen") + 
-    geom_point(alpha = 0.1) +
-    theme_minimal()
-}
 
-quick_boxplot <- function(data, y_var, x_var) {
-  ggplot(data = data, aes(y = {{ y_var }}, x = {{ x_var }})) +
-    geom_boxplot(colour = "seagreen") + 
-    geom_point(alpha = 0.1) +
-    theme_minimal()
-}
-
-quick_viz(cleaned_af, individual_count, species, type = "violin")
-quick_viz(cleaned_af, decimal_latitude, species, type = "boxplot")
+prepare_data_for_plot
 ```
+
+### Exercise: 
+
+Debug and fix the following function with any of the approaches above.
+
+There are 2 errors here
+
+```{r}
+species = cleaned_af$species
+
+
+create_underscore_species_name <- function(species){
+  genus <- stringr::word(species,1)
+  
+  intraspec_epithet <- stringr::word(species,3)
+  
+  paste0(genus, intraspec_epithet, sep = "_")
+}
+```
+
 
