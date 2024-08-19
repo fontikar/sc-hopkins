@@ -9,15 +9,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Introducing purrr
+# Introducing purrr and data
 
 ```{r}
-install.packages("purrr")
+# install.packages("purrr")
 library(purrr)
 
 # or 
 
 library(tidyverse)
+library(janitor)
+library(palmerpenguins)
 ```
 Okay, we've just gone through some function writing tips and tricks and had a play on how to get them working. 
 
@@ -157,7 +159,7 @@ data_counts |>
 
 ### Exercise: Get R^2 
 
-Try extract the R squared from the models we just fitted. You may need `summary()` and `str()`. 
+Try extract the R squared from the models we just fitted. You may need the`summary()` and `str()`. Alternatively, you can used `broom::glance()`
 
 ```{r, learners-purrr-e3}
 
@@ -176,6 +178,14 @@ data_counts |>
   # pivot_longer(everything(),
   #              names_to = "species",
   #              values_to = "r-squared")
+
+
+# With broom R package
+data_counts |> 
+  split(~species) |>
+  map(fit_model) |> 
+  map_df(~broom::glance(.x)$r.squared) 
+
 ```
 
 ## Map over 2 inputs
@@ -231,10 +241,11 @@ Alternatively, you can also use `purrr::pluck()`
 example_list |> pluck("C")
 ```
 
-Now that we got the basics under our belt, let's add a bit more complexity to this. I want to introduce a structure called a list-column. 
+Now that we got the basics under our belt, let's add a bit more complexity to this. I want to introduce a structure called a **list column**. 
 
-We are going to create a list column, where the column of the dataframe is going hold a list in each cell using `tidyr::nest()`. Here, I am nesting or tucking in the data for each `species` of penguins from the `palmerpenguins` dataset coordinates of each species into their own tibble ad storing it into a column called `data`. Check it out: 
+We are going to create a list column, where the columnis going hold a list in each cell using `tidyr::nest()`. 
 
+Here, I am nesting or "tucking in" the data for each `species` of penguins from the `palmerpenguins` dataset coordinates of each species into their own tibble ad storing it into a column called `data`. Check it out: 
 
 ```{r}
 nested_penguins <- penguins %>%
@@ -244,25 +255,24 @@ nested_penguins <- penguins %>%
 nested_penguins
 ```
 
-This is essentially splitting the dataframe by species which we've done a few things alreadyy, but isn't it much neater?! We can see that there are 3 species in total and how many observations we have for each at a glance. 
+This is essentially splitting the data frame by species which we've done a few times already, but isn't it much neater?! We can see that there are 3 species in total and how many observations we have for each at a glance. 
 
 ```{r}
 nested_penguins
 ```
 
-Let's have a peek at some data for Adelies. 
+Let's have a peek at some data for Adelies with `pluck` 
 
 ```{r}
 nested_penguins |> 
   pluck("data", 1)
 ```
 
-The benefit of using list columns is to that it works SO well with `purrr` functions, especially map. They go hand in hand, especially if you want to do several operations at the same "grouping variable" that you have nested at. 
+The benefit of using list columns is to that it works _SO_ well with `purrr` functions, especially map. They go hand in hand, especially if you want to do several operations at the same "grouping variable" that you have nested at. 
 
 Here I am computing summary statistics
 
 ```{r}
-
 # Calculate summary statistics for each species
 summary_stats <- nested_penguins %>%
   mutate(summary = map(data, ~ summarise(.x, 
@@ -271,60 +281,50 @@ summary_stats <- nested_penguins %>%
                                          mean_flipper_length = mean(flipper_length_mm, na.rm = TRUE),
                                          mean_body_mass = mean(body_mass_g, na.rm = TRUE))))
 
+summary_stats
+
 # View the summary statistics
 summary_stats %>%
   select(species, summary) %>%
   unnest(summary)
 ```
 
+### Exercise: Model fit and predict
 
+Nest the palmerpenguins data by species and fit a linear model predicting body mass from bill length for each group. 
 
-This is essentially splitting the dataframe by species as we did before but isn't it much neater?! We can see that there are 19 species in total and how many observations we have for each at a glance. 
+Bonus: Once you have done can you use the `{broom}` package to `augment` some model predictions for body mass to our data frame 
 
-```{r}
-penguins_nested
-```
+```{r, learners-purrr-e4}
 
-
-
-
-
-For example, let's say I want to calculate the range size of each penguin. One way I can do this is by drawing alpha-hulls (a form of spatial polygon) using the coordinates data. 
-
-```{r}
-library(sf)
-
-penguins_nested |> 
   
 ```
 
+```{r, instructors-purrr-e4}
+# install.packages(brooms)
 
-```{r}
-penguins_combined  |> 
-  filter(individualCount > 0) |>
-  clean_names()
-  select(species, decimalLongitude, decimalLatitude) |> 
-  nest(coords = c(longitude, latitude))
+nested_penguins <- penguins %>%
+  group_by(species) %>%
+  nest()
+
+models <- nested_penguins |> 
+  mutate(lm_model = map(data, ~lm(bill_length_mm ~ body_mass_g, data = .x))) 
+
+
+# Predict body mass using the fitted models
+predictions <- models %>%
+  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
+
+# Without broom
+# Predict body mass using the fitted models
+predictions <- models %>%
+  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
+
+# Unnest
+predictions |> 
+  select(species, predicted) |> 
+  unnest(predicted)
 ```
 
-
-
-
-
-
-
-
-# Using safely to handle errors
-safe_log <- safely(log)
-results <- map(c(1, 10, -1, 100), safe_log)
-results
-
-Exercise:
-  
-  Use safely to handle errors in a custom function that divides numbers.
-7. Combining purrr with dplyr
-Example:
-  
-  R
 
 
