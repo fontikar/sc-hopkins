@@ -30,8 +30,7 @@ I’ve designed these workshops to be interactive and hands-on. Be prepared to h
 - Download [Github Desktop](https://desktop.github.com/download/)
 - Install/Update [R](https://cran.r-project.org/) 
 - Install/Update [RStudio](https://posit.co/download/rstudio-desktop/)
-   - `install.packages('tidyverse')` in R
-   - `install.paclages('rmarkdown')` in R
+   - `install.packages(c("tidyverse", "palmerpenguins", "janitor"))` in R
 - Growth mindset + a positive attitude :) 
 
 ### Assumed knowledge: 
