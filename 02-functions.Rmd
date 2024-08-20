@@ -204,26 +204,14 @@ cleaned_af |>
 
 - Create a new variable called `infraspecific_epiphet` where the second word of species is the value. You may need to use `stringr`
 
-```{r}
-library(stringr)
+```{r, learner-function-e3}
 
-cleaned_af <- cleaned_af |> 
-  mutate(infraspecific_epiphet = word(species, 2)) |> 
-  relocate(infraspecific_epiphet, .after = genus) 
 ```
 
 - Write a function that will join `genus` strings together separated by a `_` that you can use alongside `mutate()` 
 
-```{r}
-join_underscore <- function(genus, epiphet){
-  paste(genus, epiphet, sep = "_")
-}
+```{r, learner-function-e4}
 
-join_underscore(letters, LETTERS)
-
-cleaned_af |> 
-  mutate(species_underscore = join_underscore(genus, infraspecific_epiphet)) |> 
-  pull(species_underscore)
 ```
 
 ## A function for quick data visualisations
@@ -231,6 +219,7 @@ cleaned_af |>
 Another common task for researchers is to quickly generate some data visualisations to get a sense of their data. Here we will use `ggplot2`. 
 
 Let's say I want to create a histogram our numeric variables, so I can check if there are any rogue data points. I will write the code out once and format the plot to how I want it. 
+
 ```{r}
 ggplot(data = cleaned_af, aes(x = decimal_latitude)) +
   geom_histogram(bins = 50, fill = "seagreen") + 
@@ -249,6 +238,7 @@ Identify your inputs!
 - What parts of the code do you expect to change?
 
 ```{r}
+# Write the function
 quick_histogram <- function(data, var, group_var){
   ggplot(data = data, aes(x = {{var}})) +
   geom_histogram(bins = 50, fill = "seagreen") + 
@@ -256,6 +246,7 @@ quick_histogram <- function(data, var, group_var){
   theme_minimal()
 }
 
+# Take it for a spin
 cleaned_af |> quick_histogram(decimal_longitude)
 cleaned_af |> quick_histogram(individual_count, species)
 ```
@@ -268,61 +259,15 @@ cleaned_af |> quick_histogram(individual_count, species)
 
 ```
 
-```{r, instructore-function-e3}
-quick_violin <- function(data, y_var, x_var){
-ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
-  geom_violin(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  theme_minimal()
-}
-
-ggplot(data = cleaned_af, aes(y = decimal_latitude, x = species)) +
-  geom_violin(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  theme_minimal()
-
-quick_violin(cleaned_af, decimal_latitude, country_code)
-quick_violin(cleaned_ap, individual_count, institution_code)
-```
-
 - Amend the function above: Add an input variable for whether to plot `individual_count` on log10 scale or not. 
 ```{r}
-# Generate the plot once
-ggplot(data = cleaned_af, aes(y = individual_count, x = species)) +
-  geom_violin(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  scale_y_log10() +
-  theme_minimal()
 
-quick_violin <- function(data, y_var, x_var, y_log10){
-
-  base <- ggplot(data = cleaned_af, aes(y = {{y_var}}, x = {{x_var}})) +
-  geom_violin(colour = "seagreen") + 
-  geom_point(alpha = 0.1) +
-  theme_minimal()
-  
-if(y_log10 == TRUE) 
- base <- base + scale_y_log10()
-
-return(base)
-}
-
-quick_violin(cleaned_ec, individual_count, species, FALSE)
-quick_violin(cleaned_ec, individual_count, species, TRUE)
 ```
 
 - Write a function to save a ggplot object where the default file path is the `output/fig/` folder. Tip - check if the file path exists and if not, create it. 
 
 ```{r}
-save_plot <- function(gg_obj, file_name, path = "output/fig/", ...){
-  if(! file.exists(path)){
-    dir.create(path)
-  }
-  ggsave(file_name, path = path, plot = gg_obj, ...)
-}
 
-p1 <- quick_violin(cleaned_af, individual_count, species, TRUE)
-save_plot(p1, "plot.png")
 ```
 
 ## Argh, help my function isn't working
