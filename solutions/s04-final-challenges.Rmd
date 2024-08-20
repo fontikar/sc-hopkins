@@ -54,10 +54,10 @@ Try solving this in R using new skills:
 
 ```{r, instructor-solutions-1}
 penguins_combined |>
-  mutate(summer=month %in% c(1,2,3,12,11,10)) |>
-  group_by(species,summer) |>
-  summarize(med_lat=median(decimal_latitude,na.rm=TRUE)) |>
-  pivot_wider(names_from = `summer`,values_from = `med_lat`) |>
+  mutate(summer = month %in% c(1,2,3,12,11,10)) |> 
+  group_by(species, summer) |> 
+  summarise(median_latitude = median(decimal_latitude, na.rm = TRUE)) |> 
+  pivot_wider(names_from = `summer`,values_from = `median_latitude`) |> 
   mutate(`Migration distance (degrees latitude)`=`FALSE`-`TRUE`) |>
   ggplot(aes(y=species,x=`Migration distance (degrees latitude)`)) +
   geom_point()
