@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-Here are a few challenges for us to solve together collaboratively. We will work in pairs on **separate branches** and use git to **commit our changes**, and then submit a **pull reques*t* to merge changes back into the main branch
+Here are a few challenges for us to solve together collaboratively. We will work in pairs on **separate branches** and use git to **commit our changes**, and then submit a **pull request** to merge changes back into the main branch
 
 ## Load libraries
 
@@ -42,13 +42,36 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
-- 
-- 
+- calculate median summer and median winter latitudes 
+- calculate difference between latitudes 
 - 
 
 Try solving this in R using new skills:
 
 ```{r, learner-solutions}
+#make season  variable
+penguins_combined <-
+  penguins_combined %>% 
+  mutate(season = case_when(
+        month %in% c(9,10,11,12,1,2) ~'summer',
+        month %in% c(3,4,5,6,7,8) ~ 'winter',
+      ))
+
+calc.median <- 
+  function(data, group, var){
+    temp.data <- 
+      data %>% 
+      group_by({{group}}) %>% 
+      dplyr::summarise(med.count = median({{var}}, na.rm=TRUE))
+    
+    return(temp.data)
+  }
+
+penguins_combined %>% 
+  split(., ~species) %>% 
+  map_df(~calc.median(., group=season, var=decimal_latitude))
+
+#...no diference calculated yet
 
 ```
 
@@ -91,7 +114,7 @@ c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or
 
 Make a folder and make 17 pdfs, one for each penguin species, with a map of that species.  Make the title of the plot include both the common name of the speices and the scientific name.  Make the file name the scientific name.
 
-In words, describe what are the steps to solve the challenge: 
+In words, describe what are the steps to solve the challenge:
 
 - 
 - 
