@@ -1,0 +1,124 @@
+---
+title: "Final challenges"
+author: "Fonti Kar, Will Cornwell, Daniel Falster"
+date: "2024-08-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+Here are a few challenges for us to solve together collaboratively. We will work in pairs on **separate branches** and use git to **commit our changes**, and then submit a **pull reques*t* to merge changes back into the main branch
+
+## Load libraries
+
+We will primarily be using packages from the {tidyverse}, feel free to add more packages here to help solve the challenges.
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+## Compiling the data
+
+Like in the purrr lesson, we will compile the data that is stored in `data/penguin_distributions` into one big dataframe
+
+```{r}
+penguins_combined <- 
+  list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind() |> 
+  clean_names()
+```
+
+## Challenge 1: How much do different penguin species migrate
+
+Your penguin collaborator knows from natural history knowledge that some penguins migrate and others don't but no one has ever quantified this.  Calculate the difference between the summer median latitude and the winter median latitude for each species.  (Median is more robust to outliers so that's more appropriate here compared to the mean.) Note there may be species with missing data for certain seasons and this may lead to missing species in the final plot. 
+
+Make a plot of species by degrees latitude migrated.    
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions}
+
+```
+
+## Challenge 2 - Facet plot and export plots
+
+We want some good visualisations of our data.
+
+a. Make a multipanel plot of global distribution of penguins, with a panel for each genus
+b. Make a multipanel plot of by month
+c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or >=10) on the x-axis
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+Try solving this in R using new skills:
+
+a. Make a multipanel plot of global distribution of penguins, with a panel for each genus
+
+```{r}
+
+```
+
+b. Make a multipanel plot of by month
+
+```{r}
+
+```
+
+c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or >=10) on the x-axis
+
+
+```{r}
+
+```
+
+## Challenge 3 - Make _a lot_ of maps
+
+Make a folder and make 17 pdfs, one for each penguin species, with a map of that species.  Make the title of the plot include both the common name of the speices and the scientific name.  Make the file name the scientific name.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions-3}
+
+```
+
+## Challenge 4 - Plot country x species presence-absence
+
+You want to make a graph of country x species, colouring for each species if it present in each country.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions-4}
+
+```
+
+

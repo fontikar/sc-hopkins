@@ -1,0 +1,270 @@
+---
+title: "Final challenges"
+author: "Fonti Kar, Will Cornwell, Daniel Falster"
+date: "2024-08-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+Here are a few challenges for us to solve together collaboratively. We will work in pairs on **separate branches** and use git to **commit our changes**, and then submit a **pull reques*t* to merge changes back into the main branch
+
+## Load libraries
+
+We will primarily be using packages from the {tidyverse}, feel free to add more packages here to help solve the challenges.
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+## Compiling the data
+
+Like in the purrr lesson, we will compile the data that is stored in `data/penguin_distributions` into one big dataframe
+
+```{r}
+penguins_combined <- 
+  list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind() |> 
+  clean_names()
+```
+
+## Challenge 1: How much do different penguin species migrate
+
+Your penguin collaborator knows from natural history knowledge that some penguins migrate and others don't but no one has ever quantified this.  Calculate the difference between the summer median latitude and the winter median latitude for each species.  (Median is more robust to outliers so that's more appropriate here compared to the mean.) Note there may be species with missing data for certain seasons and this may lead to missing species in the final plot. 
+
+Make a plot of species by degrees latitude migrated.    
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions-1}
+
+```
+
+```{r, instructor-solutions-1}
+penguins_combined |>
+  mutate(summer=month %in% c(1,2,3,12,11,10)) |>
+  group_by(species,summer) |>
+  summarize(med_lat=median(decimal_latitude,na.rm=TRUE)) |>
+  pivot_wider(names_from = `summer`,values_from = `med_lat`) |>
+  mutate(`Migration distance (degrees latitude)`=`FALSE`-`TRUE`) |>
+  ggplot(aes(y=species,x=`Migration distance (degrees latitude)`)) +
+  geom_point()
+```
+
+## Challenge 2 - Facet plot and export plots
+
+We want some good visualisations of our data.
+
+a. Make a multipanel plot of global distribution of penguins, with a panel for each genus
+b. Make a multipanel plot of by month
+c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or >=10) on the x-axis
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+Try solving this in R using new skills:
+
+a. Make a multipanel plot of global distribution of penguins, with a panel for each genus
+
+```{r}
+
+```
+
+
+```{r, instructor-solutions-2}
+library(ggplot2)
+world_map <- map_data("world")
+
+#p <-
+  ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group), fill = "pink", color = "blue") +
+
+  
+geom_point(data = penguins_combined, aes(x = decimal_longitude, y = decimal_latitude))+
+theme_minimal() +
+  coord_fixed() +
+  
+facet_wrap(~ genus)
+```
+
+b. Make a multipanel plot of by month
+
+```{r}
+
+```
+
+
+```{r, instructor-solutions-2b}
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group), fill = "pink", color = "blue") +
+
+  
+geom_point(data = penguins_combined, aes(x = decimal_longitude, y = decimal_latitude))+
+theme_minimal() +
+  coord_fixed() +
+  
+facet_wrap(~ month)
+```
+
+c. Make a multipanel plot of by genus on the y-axis and individual count (<10 or >=10) on the x-axis
+
+
+```{r}
+
+```
+
+```{r, instructor-solutions-2c}
+penguins_combined <- penguins_combined %>%
+  mutate(count_category = ifelse(individual_count < 10, "<10", ">=10"))
+ggplot(penguins_combined, aes(x = count_category,fill = genus)) +
+  geom_bar() +
+  facet_wrap(~ genus, scales = "free_y") +
+  theme_minimal()+
+labs(
+    title = "Distribution of Individual Counts by Genus",
+    x = "Individual Count Category",
+    y = "Count",
+    fill = "Genus"
+  ) +
+  theme(
+    plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    strip.text = element_text(size = 10)
+  )
+```
+
+## Challenge 3 - Make _a lot_ of maps
+
+Make a folder and make 17 pdfs, one for each penguin species, with a map of that species.  Make the title of the plot include both the common name of the speices and the scientific name.  Make the file name the scientific name.
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions-3}
+
+```
+
+```{r, instructor-solutions-3}
+make_plot <- function(penguin_of_interest, pen_all = pen_all) {
+  world <- map_data("world")
+  specific_pen <- filter(pen_all, species == penguin_of_interest)
+  pen_large_counts <- filter(specific_pen, individual_count >= 1000)
+  pen_small_counts <- filter(specific_pen, individual_count < 1000)
+  worldplot <- ggplot() +
+    geom_polygon(data = world, aes(x = long, y = lat, group = group), fill= "grey") +
+    coord_fixed(1.3) +
+    geom_point(
+      data = pen_small_counts,
+      aes(x = decimal_longitude, y = decimal_latitude),
+      col = "red",
+      alpha = 0.1
+    ) +
+    geom_point(
+      data = pen_large_counts,
+      aes(x = decimal_longitude, y = decimal_latitude),
+      col = "red"
+    ) +
+    ggtitle(penguin_of_interest) +
+    theme_void()
+  print(worldplot)
+  return(worldplot)
+}
+
+# choose a species to try it
+penguin_species <- unique(penguins_combined$species)
+spp <- penguin_species[10]
+
+make_plot(spp, penguins_combined)
+```
+
+
+## Challenge 4 - Plot country x species presence-absence
+
+You want to make a graph of country x species, colouring for each species if it present in each country. Consider a species is present if individual_count > 3
+
+In words, describe what are the steps to solve the challenge: 
+
+- 
+- 
+- 
+
+
+Try solving this in R using new skills:
+
+```{r, learner-solutions-4}
+
+```
+
+```{r, instructor-solutions-4}
+
+# count the number of observations for each species in each country
+out_count <-
+  penguins_combined |>
+  group_by(species, country_code) |>
+  summarise(
+    .groups = "drop",
+    # number of records
+    n = n()
+  ) |>
+  filter(
+    !is.na(country_code),
+    # consider a species present if > 3 obs
+    n > 3
+  )
+
+# Create a full grid of country x species combinations
+# unlike the counts above, this will contain cells where there are zero counts
+out_grid <- 
+  expand_grid(
+    species = unique(out_count$species),
+    country_code = unique(out_count$country_code)
+)
+
+# join these to get full counts
+out <-
+  left_join(
+    out_grid, out_count,
+    by = join_by(species, country_code)
+  ) |>
+  mutate(
+    # fill zeroes
+    n = replace_na(n, 0),
+    # TRUE-FALSE if speciesa is present
+    present = n > 0
+  )
+
+out |>
+  # Reorder factor variables by number of species
+  mutate(
+    species = forcats::fct_reorder(species, present, sum),
+    country_code = forcats::fct_reorder(country_code, present, sum)
+  ) |>
+  # Pass modified data into ggplot
+  ggplot(aes(country_code, species, fill= present)) +
+  geom_tile()
+
+```
+
+
