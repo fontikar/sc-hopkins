@@ -42,14 +42,22 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
-- 
-- 
-- 
+- group_by species
+- calculate the difference between summer median and winter median latitude for each species
+- remove NA data
+- make a plot of species by degrees latitude migrated
 
 Try solving this in R using new skills:
 
 ```{r, learner-solutions}
-
+penguins_combined |>
+  mutate(season = ifelse(month %in% c(1,2,3,12,11,10), "summer", "winter")) |>
+  group_by(species, season) |>
+  summarise(median_latitude = median(decimal_latitude, na.rm = TRUE)) |>
+  pivot_wider(names_from="season", values_from="median_latitude") |>
+  mutate(Migration_distance = summer-winter) |>
+  ggplot(aes(Migration_distance, species)) +
+    geom_point()
 ```
 
 ## Challenge 2 - Facet plot and export plots
