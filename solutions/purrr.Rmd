@@ -1,0 +1,383 @@
+---
+title: "purrr"
+author: "Fonti Kar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introducing purrr and data
+
+```{r}
+# install.packages("purrr")
+library(purrr)
+
+# or 
+
+library(tidyverse)
+library(janitor)
+library(palmerpenguins)
+```
+Okay, we've just gone through some function writing tips and tricks and had a play on how to get them working. 
+
+Now, I want to introduce you all to the R package purrr. This package will allow you to use your functions and scale up dramatically. 
+
+The main functions from purrr you will likely use is `map_` and its variants `map2`, `pmap` or `walk_` and its variants. 
+
+`map` loves split-apply-combine problems. It is written for exactly this purpose.
+
+Let me demonstrate first. Look inside the `data/penguin_distributions/` folder. There you can see that I have multiple `.csv` files for different species of penguins. 
+
+## Map and its structure
+
+I need to read these `.csv` into R and join them together into one big dataframe. 
+
+Here I'm getting a list of file paths for the files in `data/penguin_distributions`. Using `pattern=".csv"`, the function will only display files that match the pattern. `full.names` will display the full relative file path to each file (rather than the file name)
+
+the `map()` function expects a few things for you. Look up the help file and have a see for yourself.
+
+`map()` needs: 
+- the data, a list/vector to iterate over
+- a function to apply to each element of your list/vector. 
+
+Below, I'm applying `read_csv()` to each file path name. Notice I didn't have to supply the `()` after `read_csv.` Arguments for `read_csv` are adjusted as inputs in `map` like setting FALSE for `show_col_types`
+
+I suggest breaking up the pile and running below step to under what is happen at each line. 
+
+The final function `list_rbind()`, glues all the different data frames together into one big long dataframe! Yay! 
+
+### Read in lots of data
+
+```{r}
+list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE)
+
+list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) 
+
+list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind() # Put it all together
+
+# Finally assigning it an object  
+penguins_combined <- list.files("data/penguin_distributions", pattern=".csv", full.names = TRUE) |> 
+  map(read_csv, show_col_types = FALSE) |> 
+  list_rbind() |> 
+  clean_names()
+```
+### Exercise: nrow for island
+
+- Can you get the output of `nrow` for each `island` in the palmerpenguins::penguins dataset using `map`. (Hint: You will need `split()`). 
+
+Once you got that going, try replacing `map` with `map_dbl` - what do you notice?
+
+```{r, learners-purrr-e1}
+
+```
+
+
+```{r, instructor-purrr-e1}
+install.packages("palmerpengins")
+
+library(palmerpenguins)
+
+palmerpenguins::penguins |> 
+  split(~island) |> 
+  map(nrow)
+```
+
+## Anonymous functions
+
+`map()` unlocks your power to scale up tasks in R! Let's try another example. 
+
+Here I am splitting the data by species inside R. This means that I will be operating on the species level. 
+
+I am going to generate a plot for each species. A histogram of `individualCount`. 
+
+Notice how ggplot code is more complicated than the `read_csv()` above. ggplot code is split across multiple lines right? This is a good time to use a anonymous function. This is like writing a function on the fly. 
+
+Anonymous functions are often used for quick one-liners
+
+```{r}
+penguins_by_species_list <- split(penguins_combined, ~species)
+
+penguins_by_species_list  |> 
+  map(~ ggplot(.x) + geom_histogram(aes(x = individual_count)))
+
+penguins_by_species_list  |> 
+  map(~ summary(.x))
+```
+
+### Exercise: Glimpse by year
+
+- Can you split the `penguins_combined` data by year and get the output for `glimpse()` for each year?
+
+```{r, learners-purrr-e2}
+
+```
+
+```{r, instructor-purrr-e2}
+split(penguins_combined, ~year) |> 
+map(~ glimpse(.x))
+```
+
+## purrr + your customised functions
+
+Here we are fitting a linear model for every species with a function we have written ourselves. 
+
+Tip: Test out your function first before putting it through `map()`
+
+```{r}
+# Filter data to only that with count data
+data_counts <- penguins_combined |> filter(individual_count > 0)
+
+# Write a function to fit a model
+fit_model <- function(data) {
+  model <- lm(log10(individual_count) ~ decimal_latitude, data = data)
+  return(model)
+}
+
+# Get a unique species
+pen_species <- unique(data_counts$species)
+
+# Try it with one species
+data_one_spp <- filter(data_counts, species==pen_species[1])
+fit_one_spp <- fit_model(data_one_spp)
+
+# Map our fit model function
+data_counts |> 
+  split(~species) |>
+  map(fit_model)
+```
+
+### Exercise: Get R^2 
+
+Try extract the R squared from the models we just fitted. You may need the`summary()` and `str()`. Alternatively, you can used `broom::glance()`
+
+```{r, learners-purrr-e3}
+
+```
+
+```{r, instructor-purrr-e3}
+# Try it first with one output 
+summary(fit_one_spp)$r.squared
+
+data_counts |> 
+  split(~species) |>
+  map(fit_model) |> 
+  map_df(~summary(.x)$r.squared) 
+
+
+  # pivot_longer(everything(),
+  #              names_to = "species",
+  #              values_to = "r-squared")
+
+
+# With broom R package
+data_counts |> 
+  split(~species) |>
+  map(fit_model) |> 
+  map_df(~broom::glance(.x)$r.squared) 
+
+```
+
+## Map over 2 inputs
+
+So far we have only see purrr used with one input that we are iterating over, island, species, year. What if we have 2 inputs?? Meet `map2_` a family of functions that accepts 2 iterating inputs. 
+
+Let's say I want to create a new variable which is a combination of `island` and `species` from the palmerspenguins dataset
+
+```{r}
+penguins |> 
+  mutate(penguin_island = map2_chr(species, island, ~ paste(.x, .y, sep = "_"))) |> 
+  relocate(penguin_island, .after = island) # Move new variable in a nice places
+```
+
+### Exercise: Ratio between bill depth and bill length
+
+- Try create a variable for `mass_adjusted_bill_length` by taking the ratio between `bill_length` and `body_mass`
+
+```{r}
+
+```
+
+```{r}
+penguins |> 
+  mutate(mass_adjusted_bill_length = map2_dbl(bill_length_mm, body_mass_g, ~ .x/.y)) |> 
+  relocate(mass_adjusted_bill_length, .after = bill_length_mm) # Move new variable in a nice places
+```
+
+## Walking instead of saving many things
+
+`map` functions has a cousin called `walk` that essentially does the same thing...but it returns the output **invisibly**, its typically used in conjunction with functions where the output is not relevant
+
+Here I want to save the output of the penguins data by year as .csv files
+
+```{r}
+# Split data by year
+penguins_list_by_year <- 
+  penguins_combined |> 
+  split(~year)
+
+# Get the names of year
+names(penguins_list_by_year) <- sort(unique(penguins_combined$year))
+
+# Mapping
+purrr::map2(penguins_list_by_year, names(penguins_list_by_year), ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+
+# Walking2
+purrr::walk2(penguins_list_by_year, names(penguins_list_by_year), ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+
+# Alternative with iwalking 
+purrr::iwalk(penguins_list_by_year, ~ write_csv(.x, file = paste0("output/penguins_", .y, ".csv")))
+```
+
+### Exercise: 
+
+- What is different between the `map2` and `walk2` call? 
+- What is different in the syntax of the `walk2` and `iwalk` call? Does the help file give you a hint?
+- Using palmer penguins data, write a function that will create scatterplots between bill_length and bill depth. Include a title for each species name and then save the produced plot `ggsave()`, `walk2` or `iwalk` this over each species
+
+```{r}
+
+```
+
+```{r}
+penguins |> 
+  split(~species)
+
+# Write the function
+save_scatter_bill_len_bill_depth <- function(data, species){
+  ggplot(data = data, aes(bill_length_mm, bill_depth_mm)) + 
+  geom_point() + # Scatter plot
+  ggtitle(paste0("Species: ", species)) # Add a title
+  
+  ggsave(filename = paste0("output/", species,"_scatterplot.png"))
+}
+
+# Try it out first across whole dataset
+save_scatter_bill_len_bill_depth(penguins, "all_penguins_")
+
+# Walk it
+penguins |> 
+  split(~species) |> 
+  iwalk(~save_scatter_bill_len_bill_depth(.x, .y))
+
+```
+
+# Nesting and list columns
+
+Now I'd like to introduce to a new sort of data wrangling practice and structure. We have worked with lists right? Lists are nested structures that allows you to store a lot different kinds of data. 
+
+```{r}
+example_list <- list(A = c(1:5), 
+                     B = c(letters[1:5]), 
+                     C = tibble(x = 6:10, 
+                                y = 8:12))
+```
+
+You can access elements of a list with `$` or `[[]]``
+
+```{r}
+example_list$C
+
+example_list[["B"]]
+
+example_list[[1]][[4]]
+```
+
+Alternatively, you can also use `purrr::pluck()`
+
+```{r}
+example_list |> pluck("C")
+```
+
+Now that we got the basics under our belt, let's add a bit more complexity to this. I want to introduce a structure called a **list column**. 
+
+We are going to create a list column, where the columnis going hold a list in each cell using `tidyr::nest()`. 
+
+Here, I am nesting or "tucking in" the data for each `species` of penguins from the `palmerpenguins` dataset coordinates of each species into their own tibble ad storing it into a column called `data`. Check it out: 
+
+```{r}
+nested_penguins <- pÏenguins |>
+  group_by(species) |>
+  nest()
+
+nested_penguins
+```
+
+This is essentially splitting the data frame by species which we've done a few times already, but isn't it much neater?! We can see that there are 3 species in total and how many observations we have for each at a glance. 
+
+```{r}
+nested_penguins
+```
+
+Let's have a peek at some data for Adelies with `pluck` 
+
+```{r}
+nested_penguins |> 
+  pluck("data", 1)
+```
+
+The benefit of using list columns is to that it works _SO_ well with `purrr` functions, especially map. They go hand in hand, especially if you want to do several operations at the same "grouping variable" that you have nested at. 
+
+Here I am computing summary statistics
+
+```{r}
+# Calculate summary statistics for each species
+summary_stats <- nested_penguins |>
+  mutate(summary = map(data, ~ summarise(.x, 
+                                         mean_bill_length = mean(bill_length_mm, na.rm = TRUE),
+                                         mean_bill_depth = mean(bill_depth_mm, na.rm = TRUE),
+                                         mean_flipper_length = mean(flipper_length_mm, na.rm = TRUE),
+                                         mean_body_mass = mean(body_mass_g, na.rm = TRUE))))
+
+summary_stats
+
+# View the summary statistics
+summary_stats |>
+  select(species, summary) |>
+  unnest(summary)
+```
+
+### Exercise: Model fit and predict
+
+Nest the palmerpenguins data by species and fit a linear model predicting body mass from bill length for each group. 
+
+Bonus: Once you have done can you use the `{broom}` package to `augment` some model predictions for body mass to our data frame 
+
+```{r, learners-purrr-e4}
+
+  
+```
+
+```{r, instructors-purrr-e4}
+# install.packages(brooms)
+
+nested_penguins <- penguins |>
+  group_by(species) |>
+  nest()
+
+models <- nested_penguins |> 
+  mutate(lm_model = map(data, ~lm(bill_length_mm ~ body_mass_g, data = .x))) 
+
+
+# Predict body mass using the fitted models
+predictions <- models |>
+  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
+
+# Without broom
+# Predict body mass using the fitted models
+predictions <- models |>
+  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
+
+# Unnest
+predictions |> 
+  select(species, predicted) |> 
+  unnest(predicted)
+```
+
+
+

@@ -1,0 +1,98 @@
+---
+title: "split-combine-apply"
+author: "Fonti Kar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal of this session is to collaboratively solve a series of challenges that will introduce you to practices that enable you scale up your computations.
+
+## A common challenge: Repeating things
+
+- Split, apply, combine
+
+## Several tools that can help us apply this workflow
+
+- `tidyverse`: tables, group_by, summarise/mutate
+- `ggplot`::facet_
+
+Later in the workshop we will learn more about functions and other packages that can help solve more complex split-combine-apply problems.
+
+## Load libraries
+
+We will primarily be using packages from the {tidyverse}, feel free to add more packages here to help solve the challenges. We will also use {palmerpenguins} in a few exercises
+
+```{r}
+# install.packages("tidyverse")
+# install.packages("palmerpenguins")
+
+library(tidyverse)
+library(palmerpenguins)
+```
+
+## Introduce the data
+
+```{r}
+penguins
+```
+
+## A few coding challenges
+
+### Challenge 1: Add n_records as a column
+
+For our analysis, we need to calculate the total number of records available for each species, and add it as a new column in your data. 
+
+Consider: 
+
+- How does this task map onto the split-apply-combine framework? What are we splitting, what are applying?
+
+Now have a crack at solving this: 
+
+```{r, learner-solutions-1}
+
+```
+
+```{r, instructor-solutions-1}
+penguins_with_n_records <- penguins |> 
+  group_by(species) |> 
+  mutate(n_records = n()) |> 
+  ungroup()
+```
+
+### Challenge 2: Lots of descriptive statistics
+
+We need to report on some descriptive statistics of our penguin study. We need to know the following:
+
+- How many observations do we have for each sex for each species
+- Average body mass for each species and island
+- Average bill_length_mm for each species for each year
+
+Consider: 
+
+- How does this task map onto the split-apply-combine framework? What are we splitting, what are applying?
+
+```{r, learner-solutions-2}
+
+```
+
+```{r, instructor-solutions-2}
+penguins |> 
+  group_by(species, sex) |> 
+  summarise(n = n())
+
+penguins |> 
+  group_by(species, island) |> 
+  summarise(mean_body_mass = mean(body_mass_g, na.rm = TRUE))
+
+penguins |> 
+  group_by(species, year) |> 
+  summarise(mean_bill_len = mean(bill_length_mm, na.rm = TRUE))
+```
+
+
+
+
