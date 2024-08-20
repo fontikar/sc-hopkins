@@ -42,8 +42,12 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
+
 - group dates into summer (6/20 to 9/22) vs. winter (12/21 to 3/22) dates
 - group by species and calculate median for each season
+
+- read in all .csvs from penguin distributions
+-
 - 
 
 Try solving this in R using new skills:
@@ -65,6 +69,42 @@ penguins_combined2 <- penguins_combined %>%
   mutate(season = sapply(month, get_season))
 
 #penguins_by_species_list <- split(penguins_combined, ~species)
+
+library(palmerpenguins)
+
+penguins_by_species_list <- split(penguins_combined, ~species)
+
+get_season <- function(month, day) {
+
+if ((month == 3 & day >= 20) | (month == 4) | (month == 5) | (month == 6 & day < 21)) {
+    return("Spring")
+  } else if ((month == 6 & day >= 21) | (month == 7) | (month == 8) | (month == 9 & day < 23)) {
+    return("Summer")
+  } else if ((month == 9 & day >= 23) | (month == 10) | (month == 11) | (month == 12 & day < 21)) {
+    return("Fall")
+  } else {
+    return("Winter")
+  }}
+
+penguins_combined <- penguins_combined %>% 
+  filter(!is.na(day) & !is.na(month))
+
+penguins_combined$season <- 
+  mapply(get_season, penguins_combined$month, penguins_combined$day)
+
+penguins_combined$season <- as.factor(penguins_combined$season)
+
+#want to calculate difference between summer median lat and winter median lat for each species
+
+penguins_combined <- penguins_combined %>% 
+  group_by(species, season) %>% 
+  mutate(median_lat = median(decimal_latitude)) %>% 
+  filter(season %in% c("Winter", "Summer")) %>% 
+  group_by(species) %>% 
+  mutate(migration_dist = )
+  
+
+
 
 ```
 
