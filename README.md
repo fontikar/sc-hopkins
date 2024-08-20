@@ -28,6 +28,7 @@ I’ve designed these workshops to be interactive and hands-on. Be prepared to h
 - Your computer + charger
 - Sign up for a [Github account](https://github.com/join)
 - Download [Github Desktop](https://desktop.github.com/download/)
+- Download and [install git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - Install/Update [R](https://cran.r-project.org/) 
 - Install/Update [RStudio](https://posit.co/download/rstudio-desktop/)
    - `install.packages(c("tidyverse", "palmerpenguins", "janitor"))` in R
