@@ -77,17 +77,6 @@ Once you got that going, try replacing `map` with `map_dbl` - what do you notice
 
 ```
 
-
-```{r, instructor-purrr-e1}
-install.packages("palmerpengins")
-
-library(palmerpenguins)
-
-palmerpenguins::penguins |> 
-  split(~island) |> 
-  map(nrow)
-```
-
 ## Anonymous functions
 
 `map()` unlocks your power to scale up tasks in R! Let's try another example. 
@@ -116,11 +105,6 @@ penguins_by_species_list  |>
 
 ```{r, learners-purrr-e2}
 
-```
-
-```{r, instructor-purrr-e2}
-split(penguins_combined, ~year) |> 
-map(~ glimpse(.x))
 ```
 
 ## purrr + your customised functions
@@ -160,29 +144,6 @@ Try extract the R squared from the models we just fitted. You may need the`summa
 
 ```
 
-```{r, instructor-purrr-e3}
-# Try it first with one output 
-summary(fit_one_spp)$r.squared
-
-data_counts |> 
-  split(~species) |>
-  map(fit_model) |> 
-  map_df(~summary(.x)$r.squared) 
-
-
-  # pivot_longer(everything(),
-  #              names_to = "species",
-  #              values_to = "r-squared")
-
-
-# With broom R package
-data_counts |> 
-  split(~species) |>
-  map(fit_model) |> 
-  map_df(~broom::glance(.x)$r.squared) 
-
-```
-
 ## Map over 2 inputs
 
 So far we have only see purrr used with one input that we are iterating over, island, species, year. What if we have 2 inputs?? Meet `map2_` a family of functions that accepts 2 iterating inputs. 
@@ -201,12 +162,6 @@ penguins |>
 
 ```{r}
 
-```
-
-```{r}
-penguins |> 
-  mutate(mass_adjusted_bill_length = map2_dbl(bill_length_mm, body_mass_g, ~ .x/.y)) |> 
-  relocate(mass_adjusted_bill_length, .after = bill_length_mm) # Move new variable in a nice places
 ```
 
 ## Walking instead of saving many things
@@ -244,29 +199,6 @@ purrr::iwalk(penguins_list_by_year, ~ write_csv(.x, file = paste0("output/pengui
 
 ```
 
-```{r}
-penguins |> 
-  split(~species)
-
-# Write the function
-save_scatter_bill_len_bill_depth <- function(data, species){
-  ggplot(data = data, aes(bill_length_mm, bill_depth_mm)) + 
-  geom_point() + # Scatter plot
-  ggtitle(paste0("Species: ", species)) # Add a title
-  
-  ggsave(filename = paste0("output/", species,"_scatterplot.png"))
-}
-
-# Try it out first across whole dataset
-save_scatter_bill_len_bill_depth(penguins, "all_penguins_")
-
-# Walk it
-penguins |> 
-  split(~species) |> 
-  iwalk(~save_scatter_bill_len_bill_depth(.x, .y))
-
-```
-
 # Nesting and list columns
 
 Now I'd like to introduce to a new sort of data wrangling practice and structure. We have worked with lists right? Lists are nested structures that allows you to store a lot different kinds of data. 
@@ -283,14 +215,8 @@ You can access elements of a list with `$` or `[[]]``
 ```{r}
 example_list$C
 
-example_list[["B"]]
+#Alternatively, you can also use `purrr::pluck()`
 
-example_list[[1]][[4]]
-```
-
-Alternatively, you can also use `purrr::pluck()`
-
-```{r}
 example_list |> pluck("C")
 ```
 
@@ -352,32 +278,4 @@ Bonus: Once you have done can you use the `{broom}` package to `augment` some mo
 
   
 ```
-
-```{r, instructors-purrr-e4}
-# install.packages(brooms)
-
-nested_penguins <- penguins |>
-  group_by(species) |>
-  nest()
-
-models <- nested_penguins |> 
-  mutate(lm_model = map(data, ~lm(bill_length_mm ~ body_mass_g, data = .x))) 
-
-
-# Predict body mass using the fitted models
-predictions <- models |>
-  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
-
-# Without broom
-# Predict body mass using the fitted models
-predictions <- models |>
-  mutate(predicted = map2(lm_model, data, ~ augment(.x, newdata = .y)))
-
-# Unnest
-predictions |> 
-  select(species, predicted) |> 
-  unnest(predicted)
-```
-
-
 
