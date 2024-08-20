@@ -42,13 +42,33 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
-- 
-- 
+- Classify as summer
+- For all items on list, calculate median for winter latitude, median for summer latitude then substrct one from the next
 - 
 
 Try solving this in R using new skills:
 
 ```{r, learner-solutions}
+
+penguins_combined <- penguins_combined |>
+  mutate(season = case_when(
+    month %in% 4:9 ~ "winter",
+    month %in% c(10, 11, 12, 1, 2, 3) ~ "summer",
+    TRUE ~ NA_character_  # This handles any unexpected month values
+  ))
+
+library(dplyr)
+
+latitude_differences <- penguins_combined %>%
+  group_by(species, season) %>%
+  summarize(median_lat = median(decimal_latitude, na.rm = TRUE), .groups = 'drop') %>%
+  pivot_wider(names_from = season, values_from = median_lat) %>%
+  mutate(lat_diff = summer - winter) %>%
+  select(species, lat_diff)
+
+# View the result
+ggplot(latitude_differences, aes(y=species, x=lat_diff))+
+  geom_point()
 
 ```
 
