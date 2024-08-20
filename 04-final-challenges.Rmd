@@ -42,13 +42,33 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
+
+- group dates into summer (6/20 to 9/22) vs. winter (12/21 to 3/22) dates
+- group by species and calculate median for each season
+
 - read in all .csvs from penguin distributions
-- 
+-
 - 
 
 Try solving this in R using new skills:
 
 ```{r, learner-solutions}
+get_season <- function(month) {
+  if (month %in% c(6,7,8,9)){
+    return("Summer")
+  }
+  else if (month %in% c(12,1,2,3)){
+    return("Winter")
+  }
+  else{
+    return("Other")
+  }
+}
+
+penguins_combined2 <- penguins_combined %>%
+  mutate(season = sapply(month, get_season))
+
+#penguins_by_species_list <- split(penguins_combined, ~species)
 
 library(palmerpenguins)
 
