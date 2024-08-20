@@ -42,14 +42,24 @@ Make a plot of species by degrees latitude migrated.
 
 In words, describe what are the steps to solve the challenge: 
 
-#Evan
+Evan:
 - calculate median summer and median winter latitudes 
 - calculate difference between latitudes 
 
-#Jana
+Jana:
+- group_by species
+- calculate the difference between summer median and winter median latitude for each species
+- remove NA data
+- make a plot of species by degrees latitude migrated
+
+Raksha
+- group dates into summer (6/20 to 9/22) vs. winter (12/21 to 3/22) dates
+- group by species and calculate median for each season
+
 - read in all .csvs from penguin distributions
+-
 - 
-- 
+
 
 Try solving this in R using new skills:
 
@@ -77,6 +87,35 @@ penguins_combined %>%
   map_df(~calc.median(., group=season, var=decimal_latitude))
 
 #...no diference calculated yet
+
+
+# Jana's
+penguins_combined |>
+  mutate(season = ifelse(month %in% c(1,2,3,12,11,10), "summer", "winter")) |>
+  group_by(species, season) |>
+  summarise(median_latitude = median(decimal_latitude, na.rm = TRUE)) |>
+  pivot_wider(names_from="season", values_from="median_latitude") |>
+  mutate(Migration_distance = summer-winter) |>
+  ggplot(aes(Migration_distance, species)) +
+    geom_point()
+
+# Maya
+get_season <- function(month) {
+  if (month %in% c(6,7,8,9)){
+    return("Summer")
+  }
+  else if (month %in% c(12,1,2,3)){
+    return("Winter")
+  }
+  else{
+    return("Other")
+  }
+}
+
+penguins_combined2 <- penguins_combined %>%
+  mutate(season = sapply(month, get_season))
+
+#penguins_by_species_list <- split(penguins_combined, ~species)
 
 library(palmerpenguins)
 
@@ -110,10 +149,7 @@ penguins_combined <- penguins_combined %>%
   filter(season %in% c("Winter", "Summer")) %>% 
   group_by(species) %>% 
   mutate(migration_dist = )
-  
-
-
-
+ 
 ```
 
 ## Challenge 2 - Facet plot and export plots
