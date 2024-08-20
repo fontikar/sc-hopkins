@@ -172,18 +172,21 @@ One amazing benefit of tidyverse packages and function is the ability to not hav
 For researchers to write useful functions, we need to be able to program NSE in our own functions. In our function where we want to supply **ANY variable name**, we need to **double-embrace** the variable name input like this `{{var}}`
 
 ```{r}
+# Write out the solution once
 count_n_obs <- function(data, var){
   cleaned_af |> 
   group_by(country_code) |> 
   summarise(n_obs = n())
 }
 
+# Put the solution in the function, embrace {{var}}
 count_n_obs <- function(data, var){
   data |> 
   group_by({{var}}) |> 
   summarise(n_obs = n())
 }
 
+# Take it for a spin
 cleaned_af |> 
   count_n_obs(country_code)
 
@@ -198,17 +201,6 @@ cleaned_af |>
 ```{r, learners-function-e2}
 
 ```
-
-```{r, instructor-function-e2}
-group_median <- function(data, group_var, med_var){
-  data |> 
-  group_by({{group_var}}) |> 
-  summarise(median = median({{med_var}}))
-}
-
-cleaned_af |> group_median(institution_code, individual_count)
-```
-
 
 - Create a new variable called `infraspecific_epiphet` where the second word of species is the value. You may need to use `stringr`
 

@@ -56,13 +56,6 @@ Now have a crack at solving this:
 
 ```
 
-```{r, instructor-solutions-1}
-penguins_with_n_records <- penguins |> 
-  group_by(species) |> 
-  mutate(n_records = n()) |> 
-  ungroup()
-```
-
 ### Challenge 2: Lots of descriptive statistics
 
 We need to report on some descriptive statistics of our penguin study. We need to know the following:
@@ -78,21 +71,6 @@ Consider:
 ```{r, learner-solutions-2}
 
 ```
-
-```{r, instructor-solutions-2}
-penguins |> 
-  group_by(species, sex) |> 
-  summarise(n = n())
-
-penguins |> 
-  group_by(species, island) |> 
-  summarise(mean_body_mass = mean(body_mass_g, na.rm = TRUE))
-
-penguins |> 
-  group_by(species, year) |> 
-  summarise(mean_bill_len = mean(bill_length_mm, na.rm = TRUE))
-```
-
 
 
 
